@@ -1,16 +1,14 @@
 #!/bin/bash
-source "$HOME/.rvm/scripts/rvm"
 
 echo
 ruby --version
-rvm --version
 dart --version
 pub --version
 echo
 
 rm -rf ruby
 git clone https://github.com/flower-pot/secret_sharing.git ruby
-(cd ruby && bundle install && rake install)
+(cd ruby && bundle install --without development test && rake install)
 
 rm -rf dart
 git clone https://github.com/Adracus/secret-sharing-dart.git dart
@@ -20,19 +18,19 @@ SECRET="test"
 
 cd ruby
 RUBY_SHARES=`echo "require 'secret_sharing'
-shares = SecretSharing.split_secret('$SECRET', 2, 3)
+shares = SecretSharing.split('$SECRET', 2, 3)
 puts shares[0..1].join(',')" | ruby`
 cd ..
 
 cd dart
 DART_OUTPUT=`dart bin/secret_decoder.dart --shares $RUBY_SHARES`
-DART_SHARES=`dart bin/secret_encoder.dart --total 3 --needed 2 --ascii --secret $SECRET`
+DART_SHARES=`dart bin/secret_encoder.dart --total 3 --needed 2 --secret $SECRET`
 cd ..
 
 cd ruby
 RUBY_OUTPUT=`echo "require 'secret_sharing'
 shares = \"$RUBY_SHARES\".split(',')[0..1]
-puts SecretSharing.recover_secret(shares)" | ruby`
+puts SecretSharing.reconstruct(shares)" | ruby`
 cd ..
 
 echo
